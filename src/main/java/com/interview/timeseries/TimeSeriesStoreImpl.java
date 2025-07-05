@@ -108,6 +108,9 @@ public class TimeSeriesStoreImpl implements TimeSeriesStore {
             ConcurrentMap<String, ConcurrentMap<String, BitSet>> metricMap = tagBitmaps.get(metric);
             if (metricMap == null) return Collections.emptyList();
             BitSet combined = null;
+            // purpose of combined bitset : 
+            // for each filter, find the bitset for the tag value and combine them
+            // using AND operation to find indices that match all filters
             for (Map.Entry<String, String> f : filters.entrySet()) {
                 ConcurrentMap<String, BitSet> byVal = metricMap.get(f.getKey());
                 if (byVal == null) return Collections.emptyList();
@@ -189,6 +192,9 @@ public class TimeSeriesStoreImpl implements TimeSeriesStore {
 
     /**
      * Find first index with timestamp >= time using binary search
+     * @param list The list to search
+     * @param time The timestamp to find
+     * @return The index of the first element with timestamp >= time
      */
     private int findFirstIndex(List<DataPoint> list, long time) {
         int lo = 0, hi = list.size();
@@ -200,6 +206,12 @@ public class TimeSeriesStoreImpl implements TimeSeriesStore {
         return lo;
     }
 
+    /**
+     * Parse a line from the log file into a DataPoint object.
+     * 
+     * @param line The line to parse
+     * @return A DataPoint object
+     */
     private DataPoint parseLine(String line) {
         String body = line.substring(line.indexOf('{')+1, line.lastIndexOf('}'));
         String[] parts = body.split(", (?=(?:[^\\{]*\\{[^\\}]*\\})*[^\\}]*$)",4);
@@ -216,6 +228,11 @@ public class TimeSeriesStoreImpl implements TimeSeriesStore {
         return new DataPoint(ts, metric, val, tags);
     }
 
+    /**
+     * Get the flat store for testing purposes.
+     * This is currently used by BenchmarkStore.java
+     * @return The flat store map
+     */
     public Map<String, List<DataPoint>> getStore() {
         return flatStore;
     }
